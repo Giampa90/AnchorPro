@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnchorWatch Pro - Strumentazione Nautica & Radar GPS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        ocean: {
+                            950: '#020610',
+                            900: '#060d1f',
+                            850: '#0a1633',
+                            800: '#0f2047',
+                            700: '#18316b',
+                            600: '#234799'
+                        },
+                        marine: {
+                            emerald: '#00ff88',
+                            cyan: '#00f0ff',
+                            amber: '#ffb700',
+                            crimson: '#ff0044',
+                            purple: '#a855f7'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Menlo', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020610;
+            color: #f1f5f9;
+            user-select: none;
+            overflow-x: hidden;
+            transition: filter 0.4s ease, background-color 0.4s ease;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(6, 13, 31, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-panel-glow {
+            background: rgba(10, 22, 51, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 240, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        /* Pure Red Night Vision Mode Filter */
+        body.night-vision {
+            filter: sepia(100%) hue-rotate(300deg) saturate(900%) contrast(150%);
+            background-color: #050000 !important;
+        }
+
+        /* Radar Canvas Background Grid Pattern */
+        .radar-grid-bg {
+            background-image: 
+                radial-gradient(circle, rgba(0, 240, 255, 0.06) 1px, transparent 1px),
+                linear-gradient(to right, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px, 60px 60px, 60px 60px;
+        }
+
+        /* Pulse Animations */
+        @keyframes alarm-flash {
+            0%, 100% { box-shadow: inset 0 0 50px rgba(255, 0, 68, 0.6), 0 0 30px rgba(255, 0, 68, 0.8); border-color: #ff0044; }
+            50% { box-shadow: inset 0 0 100px rgba(255, 0, 68, 0.9), 0 0 60px rgba(255, 0, 68, 1); border-color: #ffffff; }
+        }
+
+        .alarm-border-active {
+            animation: alarm-flash 0.8s infinite alternate ease-in-out;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #00f0ff;
+            cursor: pointer;
+            box-shadow: 0 0 10px #00f0ff;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #0f2047;
+            border-radius: 3px;
+            border: 1px solid #18316b;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020610; }
+        ::-webkit-scrollbar-thumb { background: #18316b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+    <!-- TOP NAUTICAL HEADER BAR -->
+    <header class="border-b border-ocean-800 bg-ocean-900/90 backdrop-blur-xl sticky top-0 z-40 px-4 lg:px-8 py-3 flex items-center justify-between shadow-xl">
+        
+        <!-- Brand & Title -->
+        <div class="flex items-center space-x-3.5">
+            <div class="p-2.5 bg-gradient-to-tr from-cyan-600 via-teal-500 to-emerald-400 rounded-2xl shadow-lg shadow-cyan-500/20 text-slate-950 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m0-16a2 2 0 100-4 2 2 0 000 4zm0 16a8 8 0 01-8-8h2a6 6 0 0012 0h2a8 8 0 01-8 8z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-400 bg-clip-text text-transparent">AnchorWatch PRO</h1>
+                    <span class="text-[9px] font-extrabold tracking-widest uppercase px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">INTELLIGENT NAV v3.5</span>
+                </div>
+                <p class="text-[11px] text-slate-400 font-medium hidden sm:block">Plancia di Comando Nautica • Monitoraggio Deriva, Vento & Allarme GPS</p>
+            </div>
+        </div>
+
+        <!-- Dynamic Status Banner & Actions -->
+        <div class="flex items-center space-x-2.5 sm:space-x-4">
+            
+            <!-- Dynamic Status Badge -->
+            <div id="statusBadge" class="flex items-center space-x-2 px-4 py-2 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs font-black tracking-wider transition-all duration-300 shadow-lg shadow-emerald-500/10">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="statusText">ORMEGGIO SICURO</span>
+            </div>
+
+            <!-- Night Vision Toggle -->
+            <button onclick="toggleNightVision()" id="nightVisionBtn" class="px-3.5 py-2 rounded-2xl bg-ocean-800 hover:bg-ocean-700 border border-ocean-700 text-xs font-bold text-slate-200 transition-all flex items-center space-x-1.5 active:scale-95" title="Attiva modalità Rosso Notte per preservare la vista al buio">
+                <span>🔴</span>
+                <span class="hidden md:inline">Rosso Notte</span>
+            </button>
+
+            <!-- iOS Live Activity Modal Button -->
+            <button onclick="toggleIOSModal()" class="px-3.5 py-2 rounded-2xl bg-ocean-800 hover:bg-ocean-700 border border-ocean-700 text-xs font-bold text-slate-200 transition-all flex items-center space-x-1.5 active:scale-95">
+                <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.8 1.11-1.92.99-3.05-1 .04-2.18.67-2.88 1.49-.6.7-1.1 1.84-.96 2.94 1.12.09 2.22-.57 2.85-1.38z"/>
+                </svg>
+                <span class="hidden md:inline">iOS Live View</span>
+            </button>
+
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 lg:p-6 max-w-[1920px] w-full mx-auto">
+
+        <!-- LEFT COLUMN: HIGH-TECH NAUTICAL RADAR DISPLAY & SIMULATOR (7 COLS) -->
+        <div class="lg:col-span-7 flex flex-col space-y-4">
+
+            <!-- MAIN RADAR CARD -->
+            <div id="mainRadarContainer" class="glass-panel rounded-3xl overflow-hidden shadow-2xl flex flex-col relative transition-all duration-300 border border-ocean-800">
+                
+                <!-- Radar Top Overlay Controls -->
+                <div class="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+                    
+                    <!-- GPS Signal Status Badge -->
+                    <div class="glass-panel-glow px-4 py-2.5 rounded-2xl pointer-events-auto flex items-center space-x-3">
+                        <div class="flex items-center space-x-2">
+                            <span id="gpsDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            <div>
+                                <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block">Sorgente GPS</span>
+                                <span id="gpsText" class="font-mono text-xs font-bold text-amber-300">SIMULATORE DI DERIVA</span>
+                            </div>
+                        </div>
+                        <button onclick="toggleGPSMode()" id="gpsToggleBtn" class="text-[10px] bg-ocean-800 hover:bg-ocean-700 text-cyan-300 px-3 py-1 rounded-xl border border-ocean-600 font-bold transition">
+                            Usa GPS Reale
+                        </button>
+                    </div>
+
+                    <!-- Distance Metric HUD -->
+                    <div class="glass-panel-glow px-5 py-2.5 rounded-2xl pointer-events-auto text-right">
+                        <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block">Distanza dall'Ancora</span>
+                        <span id="distanceDisplay" class="font-mono text-2xl font-black text-emerald-400">12.4 m</span>
+                    </div>
+                </div>
+
+                <!-- RADAR CANVAS CONTAINER -->
+                <div class="radar-grid-bg relative w-full h-[480px] sm:h-[540px] bg-ocean-950 flex items-center justify-center overflow-hidden">
+                    <canvas id="radarCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+                    
+                    <!-- Drag Anchor Helper Overlay -->
+                    <div class="absolute bottom-3 left-4 text-[10px] text-slate-400 font-mono bg-ocean-950/80 px-3 py-1 rounded-xl border border-ocean-800 pointer-events-none">
+                        💡 Clicca/Trascina sulla mappa per riposizionare il punto dell'Ancora ("Corrige Ancora")
+                    </div>
+
+                    <!-- CRITICAL ALARM OVERLAY BANNER -->
+                    <div id="alarmBanner" class="hidden absolute inset-0 bg-rose-950/90 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-6 text-center alarm-border-active">
+                        <div class="w-20 h-20 rounded-full bg-rose-600/30 text-rose-500 border-2 border-rose-500 flex items-center justify-center mb-4 animate-bounce shadow-2xl">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase mb-2 drop-shadow-md">ALLARME! ANCORA SPEDONATA</h2>
+                        <p class="text-sm sm:text-base text-rose-200 max-w-lg mb-6 font-medium">La barca ha superato il raggio di sicurezza limite di <span id="alarmPerimeterVal" class="font-bold underline text-white">48m</span>! Verificare ormeggio e catena!</p>
+                        <button onclick="silenceAlarm()" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-sm tracking-wider uppercase transition-all shadow-2xl shadow-rose-600/70 active:scale-95 border border-rose-400 flex items-center space-x-2">
+                            <span>🔕 SILENZIA SIRENA DI EMERGENZA</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- RADAR CONTROLS & SIMULATOR BENCH -->
+                <div class="p-4 bg-ocean-900/90 border-t border-ocean-800 flex flex-col md:flex-row items-center justify-between gap-3">
+                    
+                    <!-- Primary Anchor Action Button -->
+                    <div class="flex items-center space-x-2 w-full md:w-auto">
+                        <button id="setAnchorBtn" onclick="toggleAnchor()" class="flex-1 md:flex-initial px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-black text-xs tracking-wider uppercase transition-all shadow-lg shadow-emerald-500/25 active:scale-95 flex items-center justify-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m0-16a2 2 0 100-4 2 2 0 000 4zm0 16a8 8 0 01-8-8h2a6 6 0 0012 0h2a8 8 0 01-8 8z"/>
+                            </svg>
+                            <span id="anchorBtnText">REGISTRA ANCORA (PUNTO CALO)</span>
+                        </button>
+
+                        <button onclick="recenterRadar()" class="p-3.5 rounded-2xl bg-ocean-800 hover:bg-ocean-700 text-slate-200 border border-ocean-700 transition active:scale-95" title="Ricentra Mappa sull'Ancora">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Simulator Joystick Slider Bench -->
+                    <div class="w-full md:flex-1 bg-ocean-950/80 px-4 py-3 rounded-2xl border border-ocean-800 flex items-center justify-between space-x-3">
+                        <span class="text-xs text-slate-400 font-bold whitespace-nowrap">Simula Deriva:</span>
+                        <input id="driftSlider" type="range" min="0" max="65" value="12" class="w-full h-2 bg-ocean-800 rounded-lg appearance-none cursor-pointer accent-cyan-400" oninput="updateDriftFromSlider(this.value)">
+                        <button onclick="triggerSimulatedGust()" class="text-xs font-bold px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl hover:bg-amber-500/30 transition whitespace-nowrap active:scale-95">
+                            ⚡ Colpo di Vento
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- AUTOMATIC CALUMO & NAUTICAL SCOPE CALCULATOR PANEL -->
+            <div class="glass-panel rounded-3xl p-5 shadow-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 border border-ocean-800">
+                
+                <!-- Water Depth Input -->
+                <div class="bg-ocean-950 p-3.5 rounded-2xl border border-ocean-800">
+                    <label class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Profondità Fondo</label>
+                    <div class="flex items-center justify-between">
+                        <input type="number" id="depthInput" value="8" min="1" max="60" class="w-20 bg-ocean-900 border border-ocean-700 text-cyan-300 font-mono font-bold text-lg rounded-xl px-2.5 py-1 focus:outline-none focus:border-cyan-500" onchange="calculateCalumoParameters()">
+                        <span class="text-xs font-bold text-slate-400">metri</span>
+                    </div>
+                </div>
+
+                <!-- Scope Ratio Select -->
+                <div class="bg-ocean-950 p-3.5 rounded-2xl border border-ocean-800">
+                    <label class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Rapporto Catena (Scope)</label>
+                    <select id="scopeRatioSelect" class="w-full bg-ocean-900 border border-ocean-700 text-slate-200 font-bold text-xs rounded-xl px-2.5 py-2 focus:outline-none focus:border-cyan-500" onchange="calculateCalumoParameters()">
+                        <option value="3">3:1 (Mare Calmo)</option>
+                        <option value="5" selected>5:1 (Standard Notte)</option>
+                        <option value="7">7:1 (Forte Vento/Tempesta)</option>
+                    </select>
+                </div>
+
+                <!-- Boat Length (LOA) -->
+                <div class="bg-ocean-950 p-3.5 rounded-2xl border border-ocean-800">
+                    <label class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Lunghezza Barca (LOA)</label>
+                    <div class="flex items-center justify-between">
+                        <input type="number" id="loaInput" value="12" min="4" max="50" class="w-20 bg-ocean-900 border border-ocean-700 text-slate-200 font-mono font-bold text-lg rounded-xl px-2.5 py-1 focus:outline-none focus:border-cyan-500" onchange="calculateCalumoParameters()">
+                        <span class="text-xs font-bold text-slate-400">metri</span>
+                    </div>
+                </div>
+
+                <!-- GPS Buffer Tolerance -->
+                <div class="bg-ocean-950 p-3.5 rounded-2xl border border-ocean-800">
+                    <label class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Margine Errore GPS</label>
+                    <div class="flex items-center justify-between">
+                        <input type="number" id="gpsBufferInput" value="8" min="2" max="25" class="w-20 bg-ocean-900 border border-ocean-700 text-slate-200 font-mono font-bold text-lg rounded-xl px-2.5 py-1 focus:outline-none focus:border-cyan-500" onchange="calculateCalumoParameters()">
+                        <span class="text-xs font-bold text-slate-400">metri</span>
+                    </div>
+                </div>
+
+                <!-- Computed Result Banner -->
+                <div class="sm:col-span-2 lg:col-span-4 bg-ocean-950/90 p-4 rounded-2xl border border-cyan-500/30 flex items-center justify-between shadow-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 bg-cyan-500/10 text-cyan-400 rounded-xl border border-cyan-500/20">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M12 7h.01M15 7h.01M16 21H8a2 2 0 01-2-2V5a2 2 0 012-2h8a2 2 0 012 2v14a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 font-extrabold uppercase block tracking-wider">Formula Nautica Calumo Consigliato</span>
+                            <span class="text-xs font-semibold text-slate-200">Catena da Filare: <strong id="calcChainDisplay" class="text-cyan-300 font-mono text-sm font-black">40 m</strong></span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[9px] text-slate-400 font-extrabold uppercase block tracking-wider">Raggio di Sicurezza Calcolato</span>
+                        <span id="calcRadiusDisplay" class="text-xl font-black font-mono text-emerald-400">48 m</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: WEATHER FORECAST, AUDIO ALARM CONFIG, EVENT LOG (5 COLS) -->
+        <div class="lg:col-span-5 flex flex-col space-y-4">
+            
+            <!-- WEATHER & WIND ROTATION MONITOR -->
+            <div class="glass-panel rounded-3xl p-5 shadow-xl relative overflow-hidden border border-ocean-800">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="p-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-sm text-slate-100">Stazione Meteo & Vento di Bordo</h3>
+                            <p class="text-[11px] text-slate-400">Sensori Anemometrici & Previsioni Rotazione</p>
+                        </div>
+                    </div>
+                    <span id="windShiftBadge" class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">Vento Stabile</span>
+                </div>
+
+                <!-- Wind Live Metrics Grid -->
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="bg-ocean-950 p-3 rounded-2xl border border-ocean-800 text-center">
+                        <span class="text-[9px] text-slate-400 uppercase font-extrabold block mb-1">Velocità Vento</span>
+                        <span id="windSpeedVal" class="text-xl font-black font-mono text-cyan-400">16 kt</span>
+                        <span class="text-[9px] text-slate-400 block mt-0.5">Scirocco (SE)</span>
+                    </div>
+
+                    <div class="bg-ocean-950 p-3 rounded-2xl border border-ocean-800 text-center">
+                        <span class="text-[9px] text-slate-400 uppercase font-extrabold block mb-1">Raffiche Max</span>
+                        <span id="windGustVal" class="text-xl font-black font-mono text-amber-400">26 kt</span>
+                        <span class="text-[9px] text-slate-400 block mt-0.5">dalle 03:30</span>
+                    </div>
+
+                    <div class="bg-ocean-950 p-3 rounded-2xl border border-ocean-800 text-center">
+                        <span class="text-[9px] text-slate-400 uppercase font-extrabold block mb-1">Direzione (Deg)</span>
+                        <span id="windDirVal" class="text-xl font-black font-mono text-slate-200">135°</span>
+                        <span class="text-[9px] text-slate-400 block mt-0.5">+15° rotazione</span>
+                    </div>
+                </div>
+
+                <!-- Wind Shift Warning Note -->
+                <div class="p-3.5 rounded-2xl bg-ocean-950 border border-amber-500/30 flex items-start space-x-3">
+                    <div class="text-amber-400 mt-0.5">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div class="text-xs">
+                        <span class="font-bold text-amber-300 block mb-0.5">Monitor Wind Shift Attivo:</span>
+                        <p class="text-slate-300 leading-relaxed text-[11px]">Prevista rotazione verso Libeccio SW nelle prime ore della notte. La barca orienterà il calumo di circa 90°.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ALARM SOUND CONFIGURATION PANEL -->
+            <div class="glass-panel rounded-3xl p-5 shadow-xl border border-ocean-800">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-2 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-sm text-slate-100">Sirena Acustica di Emergenza</h3>
+                            <p class="text-[11px] text-slate-400">Sintetizzatore Web Audio ad Alta Frequenza</p>
+                        </div>
+                    </div>
+                    <button onclick="testAudioSound()" class="px-3.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-xs font-bold text-rose-300 transition flex items-center space-x-1 active:scale-95">
+                        <span>🔊 Test Sirena</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2.5 mt-4">
+                    <button onclick="setAlarmSound('klaxon')" id="soundBtn-klaxon" class="p-3 rounded-2xl bg-ocean-950 border border-cyan-500 text-cyan-300 font-bold text-xs text-center transition active:scale-95">
+                        📢 Klaxon Bitonale
+                    </button>
+                    <button onclick="setAlarmSound('siren')" id="soundBtn-siren" class="p-3 rounded-2xl bg-ocean-950 border border-ocean-800 text-slate-400 font-bold text-xs text-center hover:border-slate-700 transition active:scale-95">
+                        🚨 Sirena Nautica
+                    </button>
+                    <button onclick="setAlarmSound('foghorn')" id="soundBtn-foghorn" class="p-3 rounded-2xl bg-ocean-950 border border-ocean-800 text-slate-400 font-bold text-xs text-center hover:border-slate-700 transition active:scale-95">
+                        🚢 Tromba Nebbia
+                    </button>
+                </div>
+            </div>
+
+            <!-- LOGBOOK EVENT REGISTER -->
+            <div class="glass-panel rounded-3xl p-5 shadow-xl flex-1 flex flex-col border border-ocean-800">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-extrabold text-sm text-slate-100 flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Diario di Bordo & Log Telemetrico GPS</span>
+                    </h3>
+                    <button onclick="clearLog()" class="text-[11px] text-slate-400 hover:text-slate-200 transition font-medium">Svuota</button>
+                </div>
+
+                <div id="eventLogContainer" class="flex-1 bg-ocean-950 rounded-2xl border border-ocean-800 p-3 space-y-2 overflow-y-auto max-h-[220px] font-mono text-[11px]">
+                    <!-- Log Entries Inserted Dynamically -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- IOS LIVE ACTIVITIES & APPLE WATCH OVERLAY MODAL -->
+    <div id="iosModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel-glow rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative overflow-hidden border border-ocean-700">
+            
+            <button onclick="toggleIOSModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full bg-ocean-800 border border-ocean-700 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+
+            <div class="mb-6">
+                <h3 class="text-xl font-black text-white flex items-center space-x-2">
+                    <span>iOS Live Activity & Apple Watch View</span>
+                </h3>
+                <p class="text-xs text-slate-400">Sincronizzazione in tempo reale per Lock Screen e Dynamic Island.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                
+                <!-- iPhone Lockscreen Mockup -->
+                <div class="bg-black p-4 rounded-[42px] border-4 border-slate-700 shadow-2xl flex flex-col items-center">
+                    <!-- Dynamic Island Mockup -->
+                    <div class="w-28 h-6 bg-black border border-slate-800 rounded-full mb-6 flex items-center justify-between px-3 text-[9px] text-cyan-400 font-mono">
+                        <span>⚓ 12.4m</span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    </div>
+
+                    <!-- Lockscreen Widget -->
+                    <div class="w-full bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 backdrop-blur-md shadow-lg text-left">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m0-16a2 2 0 100-4 2 2 0 000 4zm0 16a8 8 0 01-8-8h2a6 6 0 0012 0h2a8 8 0 01-8 8z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-bold text-white">AnchorWatch Live</span>
+                            </div>
+                            <span class="text-[9px] text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">IN GUARDIA</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 my-2.5">
+                            <div class="bg-slate-800/80 p-2 rounded-xl">
+                                <span class="text-[9px] text-slate-400 block uppercase font-bold">Distanza</span>
+                                <span id="iosDistVal" class="text-sm font-black font-mono text-cyan-300">12.4 m</span>
+                            </div>
+                            <div class="bg-slate-800/80 p-2 rounded-xl">
+                                <span class="text-[9px] text-slate-400 block uppercase font-bold">Vento / Raffica</span>
+                                <span class="text-sm font-black font-mono text-amber-300">16 / 26 kt</span>
+                            </div>
+                        </div>
+
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden mt-2">
+                            <div id="iosProgressBar" class="bg-emerald-400 h-full w-[25%] transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <span class="text-[10px] text-slate-500 mt-4">iPhone Lock Screen Widget</span>
+                </div>
+
+                <!-- Apple Watch Mockup -->
+                <div class="flex flex-col items-center">
+                    <div class="w-48 h-56 bg-black rounded-[40px] border-4 border-slate-700 p-4 flex flex-col justify-between shadow-2xl relative">
+                        <div class="flex justify-between items-center text-[10px] text-slate-400">
+                            <span>03:15</span>
+                            <span class="text-cyan-400 font-bold">AnchorWatch</span>
+                        </div>
+
+                        <div class="text-center my-auto">
+                            <span class="text-[9px] text-slate-400 uppercase font-bold block">Dist. Ancora</span>
+                            <span id="watchDistVal" class="text-2xl font-black font-mono text-emerald-400 block">12.4m</span>
+                            <span class="text-[10px] text-slate-300 bg-slate-800 px-2.5 py-0.5 rounded-full inline-block mt-1 font-mono">💨 16kt SE</span>
+                        </div>
+
+                        <div class="w-full bg-emerald-500/20 border border-emerald-500/40 rounded-xl py-1 text-center">
+                            <span class="text-[9px] font-bold text-emerald-400 uppercase">SICURO</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] text-slate-500 mt-4">Apple Watch Complication</span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC CORE -->
+    <script>
+        // GLOBAL NAUTICAL STATE
+        const state = {
+            isAnchored: true,
+            anchorCoords: { x: 0, y: 0 },
+            boatPosition: { x: 9.5, y: -7.8 },
+            depth: 8,
+            scopeRatio: 5,
+            loa: 12,
+            gpsBuffer: 8,
+            computedRadius: 48,
+            windAngle: 135, // degrees
+            windSpeed: 16,  // knots
+            windGust: 26,   // knots
+            useRealGPS: false,
+            watchPositionId: null,
+            alarmActive: false,
+            alarmSilenced: false,
+            alarmType: 'klaxon', // 'klaxon', 'siren', 'foghorn'
+            radarAngle: 0,
+            driftTrail: [],
+            isDraggingAnchor: false
+        };
+
+        // Web Audio Synthesizer Context & Interval
+        let audioCtx = null;
+        let alarmInterval = null;
+
+        // Elements Reference
+        const canvas = document.getElementById('radarCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // CALUMO COMPUTATION FORMULA
+        function calculateCalumoParameters() {
+            state.depth = parseFloat(document.getElementById('depthInput').value) || 8;
+            state.scopeRatio = parseFloat(document.getElementById('scopeRatioSelect').value) || 5;
+            state.loa = parseFloat(document.getElementById('loaInput').value) || 12;
+            state.gpsBuffer = parseFloat(document.getElementById('gpsBufferInput').value) || 8;
+
+            const chainCalculated = state.depth * state.scopeRatio;
+            const horizontalChain = Math.sqrt(Math.max(0, Math.pow(chainCalculated, 2) - Math.pow(state.depth, 2)));
+            state.computedRadius = Math.round(horizontalChain + state.loa + state.gpsBuffer);
+
+            document.getElementById('calcChainDisplay').innerText = `${chainCalculated} m`;
+            document.getElementById('calcRadiusDisplay').innerText = `${state.computedRadius} m`;
+
+            addLogEntry(`Ricalcolo Calumo: Profondità ${state.depth}m, Scope ${state.scopeRatio}:1. Raggio Sicurezza: ${state.computedRadius}m`, 'info');
+        }
+
+        // CANVAS RESIZING
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // CANVAS CLICK/DRAG TO REFINE ANCHOR POSITION
+        canvas.addEventListener('mousedown', handleCanvasClick);
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) handleCanvasClick(e.touches[0]);
+        });
+
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadiusPx = Math.min(canvas.width, canvas.height) / 2 - 70;
+            const scale = maxRadiusPx / state.computedRadius;
+
+            // Recalculate boat offset relative to new click center point
+            const deltaX = (clickX - centerX) / scale;
+            const deltaY = (clickY - centerY) / scale;
+
+            state.boatPosition.x -= deltaX;
+            state.boatPosition.y -= deltaY;
+
+            addLogEntry(`Punto Ancora riposizionato con successo ("Corrige Ancora").`, 'info');
+        }
+
+        // RADAR 60 FPS RENDER LOOP
+        function animateRadar() {
+            state.radarAngle = (state.radarAngle + 1.2) % 360;
+            drawRadarPlotter();
+            requestAnimationFrame(animateRadar);
+        }
+
+        function drawRadarPlotter() {
+            if (!ctx) return;
+            const w = canvas.width;
+            const h = canvas.height;
+            const centerX = w / 2;
+            const centerY = h / 2;
+            const radiusMeters = state.computedRadius;
+
+            const padding = 70;
+            const maxRadiusPx = Math.min(w, h) / 2 - padding;
+            const scale = maxRadiusPx / radiusMeters; // px per meter
+
+            ctx.clearRect(0, 0, w, h);
+
+            // 1. Draw Radar Outer Ring & Radial Compass Rose
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadiusPx + 15, 0, 2 * Math.PI);
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Compass Points & Degree Ticks
+            const compassPoints = [
+                { text: 'N', angle: 0 }, { text: 'NE', angle: 45 },
+                { text: 'E', angle: 90 }, { text: 'SE', angle: 135 },
+                { text: 'S', angle: 180 }, { text: 'SW', angle: 225 },
+                { text: 'W', angle: 270 }, { text: 'NW', angle: 315 }
+            ];
+
+            compassPoints.forEach(p => {
+                const pRad = (p.angle - 90) * (Math.PI / 180);
+                const px = centerX + Math.cos(pRad) * (maxRadiusPx + 28);
+                const py = centerY + Math.sin(pRad) * (maxRadiusPx + 28);
+
+                ctx.fillStyle = p.text === 'N' ? '#ff0044' : '#00f0ff';
+                ctx.font = 'bold 11px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(p.text, px, py);
+            });
+
+            // Degree Ticks around perimeter
+            for (let deg = 0; deg < 360; deg += 15) {
+                const dRad = (deg - 90) * (Math.PI / 180);
+                const innerR = maxRadiusPx + 10;
+                const outerR = maxRadiusPx + (deg % 45 === 0 ? 18 : 14);
+
+                ctx.beginPath();
+                ctx.moveTo(centerX + Math.cos(dRad) * innerR, centerY + Math.sin(dRad) * innerR);
+                ctx.lineTo(centerX + Math.cos(dRad) * outerR, centerY + Math.sin(dRad) * outerR);
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
+                ctx.lineWidth = deg % 45 === 0 ? 2 : 1;
+                ctx.stroke();
+            }
+
+            // 2. Concentric Distance Rings (Scalable 10m, 25m, 50m...)
+            const distanceStep = radiusMeters <= 30 ? 10 : (radiusMeters <= 60 ? 15 : 25);
+            for (let r = distanceStep; r <= radiusMeters; r += distanceStep) {
+                const rPx = r * scale;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, rPx, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(0, 240, 255, 0.5)';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${r}m`, centerX + 6, centerY - rPx + 12);
+            }
+
+            // 3. Safety Perimeter Circle
+            const currentDist = Math.hypot(state.boatPosition.x, state.boatPosition.y);
+            const isBreached = currentDist > radiusMeters;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radiusMeters * scale, 0, 2 * Math.PI);
+            ctx.fillStyle = isBreached ? 'rgba(255, 0, 68, 0.18)' : 'rgba(0, 255, 136, 0.06)';
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([8, 4]);
+            ctx.strokeStyle = isBreached ? '#ff0044' : '#00ff88';
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 4. Rotating Radar Plasma Sweep Beam
+            const sweepRad = (state.radarAngle - 90) * (Math.PI / 180);
+            const sweepGrad = ctx.createConicGradient(sweepRad, centerX, centerY);
+            sweepGrad.addColorStop(0, 'rgba(0, 255, 136, 0.4)');
+            sweepGrad.addColorStop(0.15, 'rgba(0, 255, 136, 0.05)');
+            sweepGrad.addColorStop(0.3, 'transparent');
+            sweepGrad.addColorStop(1, 'transparent');
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadiusPx + 10, 0, 2 * Math.PI);
+            ctx.fillStyle = sweepGrad;
+            ctx.fill();
+
+            // Sweep Leading Edge Line
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + Math.cos(sweepRad) * (maxRadiusPx + 10), centerY + Math.sin(sweepRad) * (maxRadiusPx + 10));
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 5. Wind Vector Direction Arrow
+            const windRad = (state.windAngle - 90) * (Math.PI / 180);
+            const arrowLen = 45;
+            const windX = centerX + Math.cos(windRad) * (maxRadiusPx + 40);
+            const windY = centerY + Math.sin(windRad) * (maxRadiusPx + 40);
+
+            ctx.beginPath();
+            ctx.moveTo(windX, windY);
+            ctx.lineTo(windX - Math.cos(windRad) * arrowLen, windY - Math.sin(windRad) * arrowLen);
+            ctx.strokeStyle = '#ffb700';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffb700';
+            ctx.font = 'bold 10px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText(`VENTO ${state.windSpeed}kt`, windX, windY - 8);
+
+            // 6. Boat Historical Drift Trail
+            if (state.driftTrail.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(centerX + state.driftTrail[0].x * scale, centerY + state.driftTrail[0].y * scale);
+                for (let i = 1; i < state.driftTrail.length; i++) {
+                    ctx.lineTo(centerX + state.driftTrail[i].x * scale, centerY + state.driftTrail[i].y * scale);
+                }
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 7. Anchor Chain Line Cable
+            const boatPxX = centerX + state.boatPosition.x * scale;
+            const boatPxY = centerY + state.boatPosition.y * scale;
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(boatPxX, boatPxY);
+            ctx.strokeStyle = isBreached ? '#ff0044' : '#00f0ff';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // 8. Anchor Point Marker (with ping effect)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
+            ctx.fillStyle = '#00f0ff';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 10px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText('ANCORA', centerX, centerY - 14);
+
+            // 9. Boat Hull Vector Rendering
+            ctx.save();
+            ctx.translate(boatPxX, boatPxY);
+            ctx.rotate((state.windAngle + 180) * (Math.PI / 180));
+
+            // Realistic Hull Contour
+            ctx.beginPath();
+            ctx.moveTo(0, -16);
+            ctx.quadraticCurveTo(9, -2, 8, 14);
+            ctx.lineTo(-8, 14);
+            ctx.quadraticCurveTo(-9, -2, 0, -16);
+            ctx.closePath();
+            ctx.fillStyle = isBreached ? '#ff0044' : '#00ff88';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.fillStyle = isBreached ? '#ff0044' : '#00ff88';
+            ctx.font = 'bold 11px Inter';
+            ctx.textAlign = 'left';
+            ctx.fillText('IMBARCAZIONE', boatPxX + 14, boatPxY + 4);
+
+            // Safety metric evaluations
+            updateSafetyStatus(currentDist, radiusMeters);
+        }
+
+        // UPDATE DISTANCE & TRIGGER ALARM SYSTEM
+        function updateSafetyStatus(dist, maxRadius) {
+            document.getElementById('distanceDisplay').innerText = `${dist.toFixed(1)} m`;
+            document.getElementById('iosDistVal').innerText = `${dist.toFixed(1)} m`;
+            document.getElementById('watchDistVal').innerText = `${dist.toFixed(1)}m`;
+
+            const statusBadge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            const alarmBanner = document.getElementById('alarmBanner');
+            const bar = document.getElementById('iosProgressBar');
+
+            const pct = Math.min(100, Math.round((dist / maxRadius) * 100));
+            bar.style.width = `${pct}%`;
+
+            if (dist > maxRadius) {
+                statusBadge.className = 'flex items-center space-x-2 px-4 py-2 rounded-2xl bg-rose-500/20 border border-rose-500/60 text-rose-400 text-xs font-black tracking-wider animate-pulse shadow-lg shadow-rose-500/30';
+                statusText.innerText = '⚠️ ALLARME: ANCORA SPEDONATA!';
+                bar.className = 'bg-rose-500 h-full transition-all duration-300';
+                
+                document.getElementById('alarmPerimeterVal').innerText = `${maxRadius}m`;
+
+                if (!state.alarmActive && !state.alarmSilenced) {
+                    state.alarmActive = true;
+                    alarmBanner.classList.remove('hidden');
+                    alarmBanner.classList.add('flex');
+                    startAudioAlarm();
+                    addLogEntry(`🚨 EMERGENZA ANCORA: Barca fuori dal raggio di ${maxRadius}m! Sirena attivata.`, 'danger');
+                }
+            } else if (dist > maxRadius * 0.8) {
+                statusBadge.className = 'flex items-center space-x-2 px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/50 text-amber-400 text-xs font-black tracking-wider shadow-lg shadow-amber-500/20';
+                statusText.innerText = 'ATTENZIONE: PROSSIMO AL LIMITE';
+                bar.className = 'bg-amber-400 h-full transition-all duration-300';
+                if (state.alarmActive) silenceAlarm();
+            } else {
+                statusBadge.className = 'flex items-center space-x-2 px-4 py-2 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs font-black tracking-wider shadow-lg shadow-emerald-500/10';
+                statusText.innerText = 'ORMEGGIO SICURO';
+                bar.className = 'bg-emerald-400 h-full transition-all duration-300';
+                if (state.alarmActive) silenceAlarm();
+            }
+        }
+
+        // TOGGLE REAL GPS VS DRIFT SIMULATOR
+        function toggleGPSMode() {
+            state.useRealGPS = !state.useRealGPS;
+            const dot = document.getElementById('gpsDot');
+            const text = document.getElementById('gpsText');
+            const btn = document.getElementById('gpsToggleBtn');
+
+            if (state.useRealGPS) {
+                if ('geolocation' in navigator) {
+                    dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping';
+                    text.innerText = 'GPS REALE IPHONE (ATTIVO)';
+                    text.className = 'font-mono text-xs font-bold text-emerald-300';
+                    btn.innerText = 'Usa Simulatore';
+
+                    state.watchPositionId = navigator.geolocation.watchPosition(
+                        (pos) => {
+                            if (!state.anchorCoords.lat) {
+                                state.anchorCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                            }
+                            const deltaLat = (pos.coords.latitude - state.anchorCoords.lat) * 111139;
+                            const deltaLng = (pos.coords.longitude - state.anchorCoords.lng) * (111139 * Math.cos(pos.coords.latitude * Math.PI / 180));
+                            
+                            state.boatPosition = { x: deltaLng, y: -deltaLat };
+                            state.driftTrail.push({ ...state.boatPosition });
+                            addLogEntry(`GPS Fix: Lat ${pos.coords.latitude.toFixed(5)}, Lng ${pos.coords.longitude.toFixed(5)}`, 'info');
+                        },
+                        (err) => {
+                            addLogEntry(`Errore GPS: ${err.message}. Ritorno al simulatore.`, 'danger');
+                            toggleGPSMode();
+                        },
+                        { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
+                    );
+                } else {
+                    alert('Geolocation API non disponibile su questo browser.');
+                    state.useRealGPS = false;
+                }
+            } else {
+                if (state.watchPositionId) navigator.geolocation.clearWatch(state.watchPositionId);
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+                text.innerText = 'SIMULATORE DI DERIVA';
+                text.className = 'font-mono text-xs font-bold text-amber-300';
+                btn.innerText = 'Usa GPS Reale';
+                addLogEntry('Attivata modalità Simulazione Deriva.', 'warning');
+            }
+        }
+
+        // SIMULATOR CONTROLS
+        function updateDriftFromSlider(val) {
+            if (state.useRealGPS) return;
+            const angleRad = state.windAngle * (Math.PI / 180);
+            state.boatPosition.x = Math.sin(angleRad) * val;
+            state.boatPosition.y = -Math.cos(angleRad) * val;
+
+            state.driftTrail.push({ ...state.boatPosition });
+            if (state.driftTrail.length > 30) state.driftTrail.shift();
+        }
+
+        function triggerSimulatedGust() {
+            const gust = Math.floor(28 + Math.random() * 14);
+            state.windSpeed = gust;
+            state.windAngle = (state.windAngle + 35) % 360;
+
+            document.getElementById('windSpeedVal').innerText = `${gust} kt`;
+            document.getElementById('windDirVal').innerText = `${state.windAngle}°`;
+            
+            const slider = document.getElementById('driftSlider');
+            slider.value = Math.min(65, parseInt(slider.value) + 20);
+            updateDriftFromSlider(slider.value);
+
+            document.getElementById('windShiftBadge').innerText = '⚠️ Wind Shift Detect!';
+            document.getElementById('windShiftBadge').className = 'px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/40 animate-pulse';
+
+            addLogEntry(`⚡ Raffiche improvvise a ${gust} nodi! Vento ruotato a ${state.windAngle}°.`, 'warning');
+        }
+
+        function toggleAnchor() {
+            state.isAnchored = !state.isAnchored;
+            const btnText = document.getElementById('anchorBtnText');
+            if (state.isAnchored) {
+                btnText.innerText = 'REGISTRA ANCORA (PUNTO CALO)';
+                addLogEntry('Punto d\'ancora registrato sul fondo.', 'info');
+            } else {
+                btnText.innerText = 'SALPA ANCORA';
+                addLogEntry('Ancora salpata. Sistema in pausa.', 'warning');
+            }
+        }
+
+        function recenterRadar() {
+            state.boatPosition = { x: 9.5, y: -7.8 };
+            document.getElementById('driftSlider').value = 12;
+            state.driftTrail = [];
+            state.alarmSilenced = false;
+            addLogEntry('Radar ricentrato sulla posizione dell\'ancora.', 'info');
+        }
+
+        // WEB AUDIO API HIGH-FIDELITY SYNTHESIZER
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function setAlarmSound(type) {
+            state.alarmType = type;
+            ['klaxon', 'siren', 'foghorn'].forEach(t => {
+                const btn = document.getElementById(`soundBtn-${t}`);
+                if (t === type) {
+                    btn.className = 'p-3 rounded-2xl bg-ocean-950 border border-cyan-500 text-cyan-300 font-bold text-xs text-center transition active:scale-95';
+                } else {
+                    btn.className = 'p-3 rounded-2xl bg-ocean-950 border border-ocean-800 text-slate-400 font-bold text-xs text-center hover:border-slate-700 transition active:scale-95';
+                }
+            });
+            addLogEntry(`Sirena impostata su: ${type.toUpperCase()}`, 'info');
+        }
+
+        function startAudioAlarm() {
+            initAudio();
+            if (alarmInterval) clearInterval(alarmInterval);
+
+            alarmInterval = setInterval(() => {
+                if (!state.alarmActive || state.alarmSilenced) return;
+                playSynthTone(state.alarmType);
+            }, 750);
+        }
+
+        function playSynthTone(type) {
+            if (!audioCtx) return;
+
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            if (type === 'klaxon') {
+                osc1.type = 'sawtooth';
+                osc2.type = 'square';
+                osc1.frequency.setValueAtTime(784, audioCtx.currentTime); // G5
+                osc2.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc1.start();
+                osc2.start();
+                osc1.stop(audioCtx.currentTime + 0.55);
+                osc2.stop(audioCtx.currentTime + 0.55);
+
+            } else if (type === 'siren') {
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(450, audioCtx.currentTime);
+                osc1.frequency.linearRampToValueAtTime(1100, audioCtx.currentTime + 0.3);
+                osc1.frequency.linearRampToValueAtTime(450, audioCtx.currentTime + 0.6);
+
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+
+                osc1.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc1.start();
+                osc1.stop(audioCtx.currentTime + 0.65);
+
+            } else if (type === 'foghorn') {
+                osc1.type = 'sawtooth';
+                osc1.frequency.setValueAtTime(130, audioCtx.currentTime); // Low C
+
+                gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+
+                osc1.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc1.start();
+                osc1.stop(audioCtx.currentTime + 0.85);
+            }
+        }
+
+        function silenceAlarm() {
+            state.alarmActive = false;
+            state.alarmSilenced = true;
+            if (alarmInterval) clearInterval(alarmInterval);
+            const banner = document.getElementById('alarmBanner');
+            banner.classList.add('hidden');
+            banner.classList.remove('flex');
+            addLogEntry('Sirena di emergenza silenziata dall\'utente.', 'warning');
+        }
+
+        function testAudioSound() {
+            initAudio();
+            playSynthTone(state.alarmType);
+        }
+
+        // NIGHT VISION MODE TOGGLE
+        function toggleNightVision() {
+            document.body.classList.toggle('night-vision');
+            const isNight = document.body.classList.contains('night-vision');
+            addLogEntry(`Visore Notturno ${isNight ? 'ATTIVATO (Rosso Grafite)' : 'DISATTIVATO'}.`, 'info');
+        }
+
+        // LOGGING SYSTEM
+        function addLogEntry(msg, type = 'info') {
+            const container = document.getElementById('eventLogContainer');
+            const entry = document.createElement('div');
+            const time = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            let styleClass = 'text-slate-300 border-ocean-800';
+            if (type === 'danger') styleClass = 'text-rose-300 bg-rose-500/10 border-rose-500/30 font-bold';
+            if (type === 'warning') styleClass = 'text-amber-300 bg-amber-500/10 border-amber-500/30';
+            if (type === 'info') styleClass = 'text-cyan-300 bg-cyan-500/10 border-cyan-500/20';
+
+            entry.className = `p-2 rounded-xl border ${styleClass} flex justify-between items-start space-x-2`;
+            entry.innerHTML = `
+                <span class="text-slate-500 font-bold text-[9px] whitespace-nowrap">${time}</span>
+                <span class="flex-1">${msg}</span>
+            `;
+
+            container.prepend(entry);
+        }
+
+        function clearLog() {
+            document.getElementById('eventLogContainer').innerHTML = '';
+            addLogEntry('Diario di bordo svuotato.', 'info');
+        }
+
+        function toggleIOSModal() {
+            document.getElementById('iosModal').classList.toggle('hidden');
+        }
+
+        // ON LOAD INITIALIZATION
+        window.onload = function() {
+            resizeCanvas();
+            calculateCalumoParameters();
+            animateRadar();
+            addLogEntry('AnchorWatch PRO v3.5 Inizializzato.', 'info');
+            addLogEntry('Plancia Nautica pronta per il tracciamento di sicurezza.', 'info');
+        };
+    </script>
+</body>
+</html>
